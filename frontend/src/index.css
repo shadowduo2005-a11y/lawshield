@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    background-color: #ffffff;
+    color: #0f172a;
+    overflow-x: hidden;
+  }
+  button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+  button, a { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-duration: 180ms; }
+}
+
+@layer components {
+  .auth-input {
+    @apply mt-2 w-full bg-white border border-slate-200 rounded-xl px-3.5 py-3 text-sm font-normal outline-none focus:border-slate-400 focus:ring-4 focus:ring-slate-100;
+  }
+}
+
+.auth-grid {
+  background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom right, black, transparent 70%);
+}
+
+/* Shimmer animation used in hero badge */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+.shimmer-badge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+  animation: shimmer 2.5s infinite;
+}
+.shimmer-badge { position: relative; overflow: hidden; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
