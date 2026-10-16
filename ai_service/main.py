@@ -28,14 +28,10 @@ app = FastAPI(
 )
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
-# Allow the Node.js backend and Vite dev server to communicate with this service.
+# Allow the Node.js backend, Vite frontend, and production origins to communicate
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",   # Node.js backend
-        "http://localhost:5173",   # Vite dev server
-        "http://localhost:4173",   # Vite preview
-    ],
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
