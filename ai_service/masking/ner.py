@@ -41,20 +41,18 @@ def _build_analyzer() -> AnalyzerEngine:
     """Construct and configure the AnalyzerEngine."""
     logger.info("Initialising Presidio AnalyzerEngine…")
 
-    # Use the large spaCy model if already downloaded; fall back to the small
-    # model so the service starts even if en_core_web_lg is missing.
+    # Use the lightweight spaCy model en_core_web_sm so it loads instantly without crashing
     nlp_config = {
         "nlp_engine_name": "spacy",
-        "models": [{"lang_code": "en", "model_name": "en_core_web_lg"}],
+        "models": [{"lang_code": "en", "model_name": "en_core_web_sm"}],
     }
     try:
         provider = NlpEngineProvider(nlp_configuration=nlp_config)
         nlp_engine = provider.create_engine()
-        logger.info("Using spaCy model: en_core_web_lg")
-    except Exception:
-        # Fallback: let Presidio choose the default (en_core_web_sm / transformers)
+        logger.info("Using spaCy model: en_core_web_sm")
+    except (Exception, SystemExit) as e:
         logger.warning(
-            "en_core_web_lg not available — falling back to default NLP engine."
+            "Failed to load spaCy model (%s) — falling back to default NLP engine.", e
         )
         nlp_engine = None  # type: ignore[assignment]
 

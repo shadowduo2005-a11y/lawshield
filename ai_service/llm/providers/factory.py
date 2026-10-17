@@ -58,9 +58,11 @@ class OpenAIProvider(BaseLLMProvider):
 
 class GeminiProvider(BaseLLMProvider):
     def get_model(self, streaming: bool = False):
+        import os
+        model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
         raw = ChatGoogleGenerativeAI(
             api_key=settings.GEMINI_API_KEY,
-            model="gemini-2.5-flash",
+            model=model_name,
             streaming=streaming,
             temperature=0.7,
             max_retries=3
