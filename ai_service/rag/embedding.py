@@ -21,8 +21,12 @@ def get_embeddings():
             )
         else:
             try:
+                from config.settings import settings
                 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-                _embeddings_model = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+                _embeddings_model = GoogleGenerativeAIEmbeddings(
+                    model="models/embedding-001",
+                    google_api_key=settings.GEMINI_API_KEY
+                )
             except Exception:
                 from langchain_core.embeddings import FakeEmbeddings
                 _embeddings_model = FakeEmbeddings(size=384)
