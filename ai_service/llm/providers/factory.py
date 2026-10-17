@@ -59,15 +59,82 @@ class OpenAIProvider(BaseLLMProvider):
 class GeminiProvider(BaseLLMProvider):
     def get_model(self, streaming: bool = False):
         import os
-        model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
-        raw = ChatGoogleGenerativeAI(
-            api_key=settings.GEMINI_API_KEY,
-            model=model_name,
-            streaming=streaming,
-            temperature=0.7,
-            max_retries=3
-        )
-        return RateLimitRetryWrapper(raw)
+        candidates = [
+            os.getenv("GEMINI_MODEL"),
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-exp",
+            "gemini-1.5-flash-latest",
+            "gemini-1.5-flash-8b",
+            "gemini-1.5-pro",
+        ]
+        candidates = [c for c in candidates if c]
+
+        class MultiModelFallbackWrapper:
+            def __init__(self, models_list, api_key, streaming_mode):
+                self.models_list = models_list
+                self.api_key = api_key
+                self.streaming_mode = streaming_mode
+                self._active_model = None
+
+            def _get_active(self):
+                if not self._active_model:
+                    self._active_model = ChatGoogleGenerativeAI(
+                        api_key=self.api_key,
+                        model=self.models_list[0],
+                        streaming=self.streaming_mode,
+                        temperature=0.7,
+                        max_retries=1
+                    )
+                return self._active_model
+
+            def invoke(self, *args, **kwargs):
+                last_exc = None
+                for m_name in self.models_list:
+                    try:
+                        m = ChatGoogleGenerativeAI(
+                            api_key=self.api_key,
+                            model=m_name,
+                            streaming=self.streaming_mode,
+                            temperature=0.7,
+                            max_retries=1
+                        )
+                        res = m.invoke(*args, **kwargs)
+                        self._active_model = m
+                        return res
+                    except Exception as e:
+                        last_exc = e
+                        if "404" in str(e) or "not found" in str(e).lower() or "not supported" in str(e).lower():
+                            continue
+                        raise e
+                raise last_exc
+
+            def stream(self, *args, **kwargs):
+                last_exc = None
+                for m_name in self.models_list:
+                    try:
+                        m = ChatGoogleGenerativeAI(
+                            api_key=self.api_key,
+                            model=m_name,
+                            streaming=self.streaming_mode,
+                            temperature=0.7,
+                            max_retries=1
+                        )
+                        gen = m.stream(*args, **kwargs)
+                        self._active_model = m
+                        return gen
+                    except Exception as e:
+                        last_exc = e
+                        if "404" in str(e) or "not found" in str(e).lower() or "not supported" in str(e).lower():
+                            continue
+                        raise e
+                raise last_exc
+
+            def __getattr__(self, name):
+                return getattr(self._get_active(), name)
+
+        wrapper = MultiModelFallbackWrapper(candidates, settings.GEMINI_API_KEY, streaming)
+        return RateLimitRetryWrapper(wrapper)
 
 class AnthropicProvider(BaseLLMProvider):
     def get_model(self, streaming: bool = False):

@@ -1,7 +1,13 @@
+import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+
+# Disable remote telemetry to prevent network timeouts/retries on dead endpoints
+os.environ["GUARDRAILS_DISABLE_TELEMETRY"] = "true"
+os.environ["DO_NOT_TRACK"] = "true"
+os.environ["OTEL_SDK_DISABLED"] = "true"
 
 # Load env variables before other imports
 load_dotenv()

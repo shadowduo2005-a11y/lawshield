@@ -2,6 +2,10 @@ import asyncio
 import os
 import sys
 
+os.environ["GUARDRAILS_DISABLE_TELEMETRY"] = "true"
+os.environ["DO_NOT_TRACK"] = "true"
+os.environ["OTEL_SDK_DISABLED"] = "true"
+
 from dotenv import load_dotenv
 load_dotenv()
 
