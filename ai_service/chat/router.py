@@ -21,14 +21,20 @@ _QUOTA_MSG = (
 
 
 def _is_quota_error(exc: Exception) -> bool:
-    """Return True when the exception is a provider quota / rate-limit error."""
+    """Return True when the exception is a provider quota / rate-limit / overload error."""
     msg = str(exc).upper()
+    low = str(exc).lower()
     return (
         "RESOURCE_EXHAUSTED" in msg
         or "RATE_LIMIT" in msg
         or "429" in msg
-        or "quota" in str(exc).lower()
-        or "exceeded your current quota" in str(exc).lower()
+        or "503" in msg
+        or "UNAVAILABLE" in msg
+        or "HIGH DEMAND" in msg
+        or "OVERLOADED" in msg
+        or "quota" in low
+        or "exceeded your current quota" in low
+        or "try again later" in low
     )
 
 

@@ -88,9 +88,28 @@ class GeminiProvider(BaseLLMProvider):
                     )
                 return self._active_model
 
+            @staticmethod
+            def _should_fallback(exc: Exception) -> bool:
+                """Return True for transient/quota errors that warrant trying the next model."""
+                s = str(exc)
+                su = s.upper()
+                return (
+                    "404" in s
+                    or "503" in s
+                    or "429" in s
+                    or "not found" in s.lower()
+                    or "not supported" in s.lower()
+                    or "UNAVAILABLE" in su
+                    or "HIGH DEMAND" in su
+                    or "RESOURCE_EXHAUSTED" in su
+                    or "RATE_LIMIT" in su
+                    or "overloaded" in s.lower()
+                    or "try again" in s.lower()
+                )
+
             def invoke(self, *args, **kwargs):
                 last_exc = None
-                for m_name in self.models_list:
+                for idx, m_name in enumerate(self.models_list):
                     try:
                         m = ChatGoogleGenerativeAI(
                             api_key=self.api_key,
@@ -101,17 +120,24 @@ class GeminiProvider(BaseLLMProvider):
                         )
                         res = m.invoke(*args, **kwargs)
                         self._active_model = m
+                        if idx > 0:
+                            logger.info("Fell back to Gemini model: %s", m_name)
                         return res
                     except Exception as e:
                         last_exc = e
-                        if "404" in str(e) or "not found" in str(e).lower() or "not supported" in str(e).lower():
+                        if self._should_fallback(e) and idx < len(self.models_list) - 1:
+                            logger.warning(
+                                "Gemini model '%s' failed (%s). Trying next candidate...",
+                                m_name, str(e)[:120]
+                            )
+                            time.sleep(1)
                             continue
                         raise e
                 raise last_exc
 
             def stream(self, *args, **kwargs):
                 last_exc = None
-                for m_name in self.models_list:
+                for idx, m_name in enumerate(self.models_list):
                     try:
                         m = ChatGoogleGenerativeAI(
                             api_key=self.api_key,
@@ -122,10 +148,17 @@ class GeminiProvider(BaseLLMProvider):
                         )
                         gen = m.stream(*args, **kwargs)
                         self._active_model = m
+                        if idx > 0:
+                            logger.info("Stream fell back to Gemini model: %s", m_name)
                         return gen
                     except Exception as e:
                         last_exc = e
-                        if "404" in str(e) or "not found" in str(e).lower() or "not supported" in str(e).lower():
+                        if self._should_fallback(e) and idx < len(self.models_list) - 1:
+                            logger.warning(
+                                "Gemini stream model '%s' failed (%s). Trying next candidate...",
+                                m_name, str(e)[:120]
+                            )
+                            time.sleep(1)
                             continue
                         raise e
                 raise last_exc

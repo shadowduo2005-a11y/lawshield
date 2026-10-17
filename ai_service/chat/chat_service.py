@@ -248,7 +248,12 @@ class ChatService:
 
         except Exception as exc:
             logger.exception("Error during graph streaming for session %s: %s", session_id, exc)
-            raise exc
+            # Attempt a direct LLM fallback before giving up
+            try:
+                final_answer = self._direct_response(initial_messages, user_question=message)
+            except Exception as fallback_exc:
+                logger.error("Direct-response fallback also failed: %s", fallback_exc)
+                raise exc  # re-raise the original so the router's quota handler can catch it
 
         if final_answer is None:
             # Fallback: supervisor routed to END or graph produced no AI message
