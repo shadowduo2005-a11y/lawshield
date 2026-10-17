@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     # RAG Databases
     QDRANT_URL: str = "http://localhost:6333"
     ELASTICSEARCH_URL: str = "http://localhost:9200"
-    DATABASE_URL: Optional[str] = None
+    PORT: Optional[int] = 8000
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()
