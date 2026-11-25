@@ -1,0 +1,6 @@
+-r requirements.txt
+
+# Optional scanned-document OCR stack. The core chat and text-PDF pipeline do
+# not require these large packages.
+paddleocr>=3.7.0
+paddlepaddle>=3.3.1

@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: lawshield-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci && npm run build && npm run db:deploy
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: AI_SERVICE_URL
+        sync: false
+      - key: AI_SERVICE_TOKEN
+        sync: false
+      - key: FRONTEND_URL
+        value: https://lawshield.vercel.app
+      - key: AI_REQUEST_TIMEOUT_MS
+        value: "180000"
+      - key: DATABASE_POOL_MAX
+        value: "5"
+      - key: DATABASE_CONNECT_TIMEOUT_MS
+        value: "10000"
+      - key: ALLOW_VERCEL_PREVIEWS
+        value: "false"
