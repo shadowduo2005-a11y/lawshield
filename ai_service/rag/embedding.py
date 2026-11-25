@@ -31,9 +31,8 @@ def get_embeddings():
         try:
             from config.settings import settings
             from langchain_google_genai import GoogleGenerativeAIEmbeddings
-            # Note: langchain-google-genai expects "text-embedding-004", NOT "models/text-embedding-004"
             _embeddings_model = GoogleGenerativeAIEmbeddings(
-                model="text-embedding-004",
+                model="models/gemini-embedding-001",
                 google_api_key=settings.GEMINI_API_KEY
             )
         except Exception as exc:
