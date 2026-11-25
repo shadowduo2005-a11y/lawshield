@@ -40,4 +40,3 @@ def get_embeddings():
             from langchain_core.embeddings import FakeEmbeddings
             _embeddings_model = FakeEmbeddings(size=384)
     return _embeddings_model
-
