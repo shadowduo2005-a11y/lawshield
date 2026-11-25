@@ -88,3 +88,22 @@ def init_collections(collection_name: str = "documents"):
             logger.info("Created Qdrant collection '%s' with dim %d", collection_name, embed_dim)
     except Exception as e:
         logger.error("Error initializing Qdrant collection '%s': %s", collection_name, e)
+
+    # Init Elasticsearch index if ES is available
+    if es_client is not None:
+        try:
+            if not es_client.indices.exists(index=collection_name):
+                es_client.indices.create(
+                    index=collection_name,
+                    body={
+                        "mappings": {
+                            "properties": {
+                                "text": {"type": "text"},
+                                "metadata": {"type": "object"}
+                            }
+                        }
+                    }
+                )
+                logger.info("Created ES index: %s", collection_name)
+        except Exception as e:
+            logger.error("Error initializing Elasticsearch index '%s': %s", collection_name, e)
