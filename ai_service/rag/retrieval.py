@@ -59,34 +59,32 @@ def init_collections(collection_name: str = "documents"):
     q_client = get_qdrant_client()
     es_client = get_es_client()
     
-    # Init Qdrant (384 dims for BAAI/bge-small-en-v1.5)
+    # Init Qdrant with dynamic vector dimension
     try:
         from qdrant_client.http.models import VectorParams, Distance
+        from rag.embedding import get_embeddings
+        embed_dim = len(get_embeddings().embed_query("dim_probe"))
+        
         collections = [c.name for c in q_client.get_collections().collections]
+        if collection_name in collections:
+            try:
+                coll_info = q_client.get_collection(collection_name)
+                existing_dim = coll_info.config.params.vectors.size
+                if existing_dim != embed_dim:
+                    logger.warning(
+                        "Recreating Qdrant collection '%s': existing dim %s != current dim %s",
+                        collection_name, existing_dim, embed_dim
+                    )
+                    q_client.delete_collection(collection_name)
+                    collections.remove(collection_name)
+            except Exception as e:
+                logger.warning("Could not inspect existing collection dim: %s", e)
+
         if collection_name not in collections:
             q_client.create_collection(
                 collection_name=collection_name,
-                vectors_config=VectorParams(size=384, distance=Distance.COSINE)
+                vectors_config=VectorParams(size=embed_dim, distance=Distance.COSINE)
             )
-            logger.info("Created Qdrant collection: %s", collection_name)
+            logger.info("Created Qdrant collection '%s' with dim %d", collection_name, embed_dim)
     except Exception as e:
         logger.error("Error initializing Qdrant collection '%s': %s", collection_name, e)
-
-    # Init Elasticsearch index if ES is available
-    if es_client is not None:
-        try:
-            if not es_client.indices.exists(index=collection_name):
-                es_client.indices.create(
-                    index=collection_name,
-                    body={
-                        "mappings": {
-                            "properties": {
-                                "text": {"type": "text"},
-                                "metadata": {"type": "object"}
-                            }
-                        }
-                    }
-                )
-                logger.info("Created ES index: %s", collection_name)
-        except Exception as e:
-            logger.error("Error initializing Elasticsearch index '%s': %s", collection_name, e)
