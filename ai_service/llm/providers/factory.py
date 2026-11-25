@@ -18,7 +18,12 @@ class RateLimitRetryWrapper:
     def invoke(self, input, config=None, **kwargs):
         for attempt in range(4):
             try:
-                return self._model.invoke(input, config=config, **kwargs)
+                res = self._model.invoke(input, config=config, **kwargs)
+                if hasattr(res, "content") and isinstance(res.content, list):
+                    res.content = "".join([c.get("text", "") if isinstance(c, dict) else str(c) for c in res.content])
+                elif hasattr(res, "content") and not isinstance(res.content, str):
+                    res.content = str(res.content)
+                return res
             except Exception as exc:
                 exc_str = str(exc).lower()
                 if ("429" in exc_str or "rate limit" in exc_str or "rate_limit_exceeded" in exc_str) and attempt < 3:
@@ -117,6 +122,10 @@ class GeminiProvider(BaseLLMProvider):
                             max_retries=1
                         )
                         res = m.invoke(*args, **kwargs)
+                        if hasattr(res, "content") and isinstance(res.content, list):
+                            res.content = "".join([c.get("text", "") if isinstance(c, dict) else str(c) for c in res.content])
+                        elif hasattr(res, "content") and not isinstance(res.content, str):
+                            res.content = str(res.content)
                         self._active_model = m
                         if idx > 0:
                             logger.info("Fell back to Gemini model: %s", m_name)
@@ -243,4 +252,3 @@ def get_llm_provider(provider_name: str = None) -> BaseLLMProvider:
         return GroqProvider()
     else:
         raise ValueError(f"Unknown LLM provider: {provider}")
-
